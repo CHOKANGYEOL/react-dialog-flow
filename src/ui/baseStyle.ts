@@ -67,6 +67,7 @@ dialog.rdf-dialog::backdrop {
   display: inline-flex;
   flex: 0 0 auto;
   justify-content: center;
+  margin-left: auto;
 }
 
 .rdf-dialog__close-icon {

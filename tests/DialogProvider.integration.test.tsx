@@ -40,6 +40,14 @@ function ResultDialog() {
   );
 }
 
+function HeaderOnlyDialog() {
+  return (
+    <Dialog>
+      <Dialog.Header />
+    </Dialog>
+  );
+}
+
 function OpenAsyncFlow({ onResult }: { onResult: (value: boolean) => void }) {
   const { openAsync } = useDialog();
   return (
@@ -65,6 +73,13 @@ function OpenResultFlow({ onResult }: { onResult: (value: unknown) => void }) {
     >
       Open result
     </button>
+  );
+}
+
+function OpenHeaderOnlyFlow() {
+  const { open } = useDialog();
+  return (
+    <button onClick={() => open(HeaderOnlyDialog)}>Open header only</button>
   );
 }
 
@@ -259,5 +274,25 @@ describe("DialogProvider integration", () => {
     expect(
       document.querySelectorAll("#react-dialog-flow-base-style"),
     ).toHaveLength(1);
+  });
+
+  it("keeps the header close button aligned to the end without children", async () => {
+    const user = userEvent.setup();
+    render(
+      <DialogProvider>
+        <OpenHeaderOnlyFlow />
+      </DialogProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open header only" }));
+    const closeButton = document.querySelector(".rdf-dialog__close-button");
+
+    expect(closeButton).not.toBeNull();
+    expect(closeButton?.getAttribute("aria-label")).toBe("Close dialog");
+    expect(
+      document
+        .getElementById("react-dialog-flow-base-style")
+        ?.textContent?.includes("margin-left: auto;"),
+    ).toBe(true);
   });
 });
