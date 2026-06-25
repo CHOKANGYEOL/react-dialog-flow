@@ -67,6 +67,9 @@ dialog.rdf-dialog::backdrop {
   display: inline-flex;
   flex: 0 0 auto;
   justify-content: center;
+}
+
+.rdf-dialog__header > .rdf-dialog__close-button {
   margin-left: auto;
 }
 

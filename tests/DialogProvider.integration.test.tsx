@@ -292,7 +292,9 @@ describe("DialogProvider integration", () => {
     expect(
       document
         .getElementById("react-dialog-flow-base-style")
-        ?.textContent?.includes("margin-left: auto;"),
+        ?.textContent?.includes(
+          ".rdf-dialog__header > .rdf-dialog__close-button",
+        ),
     ).toBe(true);
   });
 });

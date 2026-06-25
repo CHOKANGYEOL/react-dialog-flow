@@ -17,10 +17,6 @@
   margin-bottom: var(--rdf-dialog-header-margin-bottom, 1rem);
 }
 
-.rdf-dialog__header > :first-child {
-  margin: 0;
-}
-
 .rdf-dialog__title {
   font-size: var(--rdf-dialog-title-font-size, 1.125rem);
   font-weight: var(--rdf-dialog-title-font-weight, 650);
