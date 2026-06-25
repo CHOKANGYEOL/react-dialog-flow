@@ -48,6 +48,16 @@ function HeaderOnlyDialog() {
   );
 }
 
+function EscapeDisabledDialog() {
+  return (
+    <Dialog closeOnEscape={false}>
+      <Dialog.Header>
+        <Dialog.Title>Required decision</Dialog.Title>
+      </Dialog.Header>
+    </Dialog>
+  );
+}
+
 function OpenAsyncFlow({ onResult }: { onResult: (value: boolean) => void }) {
   const { openAsync } = useDialog();
   return (
@@ -80,6 +90,15 @@ function OpenHeaderOnlyFlow() {
   const { open } = useDialog();
   return (
     <button onClick={() => open(HeaderOnlyDialog)}>Open header only</button>
+  );
+}
+
+function OpenEscapeDisabledFlow() {
+  const { open } = useDialog();
+  return (
+    <button onClick={() => open(EscapeDisabledDialog)}>
+      Open escape disabled
+    </button>
   );
 }
 
@@ -294,5 +313,27 @@ describe("DialogProvider integration", () => {
         .getElementById("react-dialog-flow-base-style")
         ?.textContent?.includes("margin-left: auto;"),
     ).toBe(true);
+  });
+
+  it("keeps a dialog open when closeOnEscape is false", async () => {
+    const user = userEvent.setup();
+    render(
+      <DialogProvider>
+        <OpenEscapeDisabledFlow />
+      </DialogProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Open escape disabled" }),
+    );
+
+    const dialog = document.querySelector("dialog");
+    expect(dialog).not.toBeNull();
+    await waitFor(() => expect(dialog?.dataset.state).toBe("open"));
+
+    fireEvent.keyDown(dialog!, { key: "Escape" });
+    dialog!.dispatchEvent(new Event("cancel", { bubbles: false }));
+
+    expect(document.querySelector("dialog")?.dataset.state).toBe("open");
   });
 });

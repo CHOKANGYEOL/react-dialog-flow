@@ -55,6 +55,8 @@ const DialogA11yContext = createContext<DialogA11yContextValue | null>(null);
 export type DialogProps<C extends ElementType = "div"> = {
   backdrop?: boolean;
   closeOnBackdrop?: boolean;
+  /** Close this dialog when Escape is pressed. Defaults to true. */
+  closeOnEscape?: boolean;
   backdropClassName?: string;
   backdropProps?: DialogBackdropProps;
   zIndex?: number;
@@ -75,6 +77,7 @@ export type DialogProps<C extends ElementType = "div"> = {
 function DialogRoot<C extends ElementType = "div">({
   backdrop = true,
   closeOnBackdrop = false,
+  closeOnEscape = true,
   backdropClassName,
   backdropProps,
   zIndex,
@@ -187,11 +190,11 @@ function DialogRoot<C extends ElementType = "div">({
     if (!element) return;
     const onCancel = (event: Event) => {
       event.preventDefault();
-      requestClose("esc");
+      if (closeOnEscape) requestClose("esc");
     };
     element.addEventListener("cancel", onCancel);
     return () => element.removeEventListener("cancel", onCancel);
-  }, [requestClose]);
+  }, [closeOnEscape, requestClose]);
 
   useEffect(() => {
     if (phase !== "closing" || motionDuration === 0) return;
@@ -248,7 +251,7 @@ function DialogRoot<C extends ElementType = "div">({
           if (event.key === "Escape") {
             event.preventDefault();
             event.stopPropagation();
-            requestClose("esc");
+            if (closeOnEscape) requestClose("esc");
           }
         }}
         style={rootStyle}
