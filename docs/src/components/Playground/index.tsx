@@ -15,8 +15,8 @@ export function Playground() {
   return <section className="playground docs-section" id="playground">
     <div className="section-heading">
       <p className="section-kicker">06 / Live playground</p>
-      <h2>Try the paths that make dialog flows awkward.</h2>
-      <p className="muted">Once a native modal opens, the page behind it becomes inert. The same control dock is rendered inside the active dialog so stack controls remain testable.</p>
+      <h2>Try confirm, select, form, and nested dialog flows.</h2>
+      <p className="muted">Once a native modal opens, the page behind it becomes inert. The same control dock is rendered inside the active dialog so async results, nested stacks, closeTop, and closeAll remain testable.</p>
     </div>
     <div className="playground-grid">
       <section className="panel"><h3>Live stack · {stack.length}</h3>{stack.length === 0 ? <p className="muted">No open dialogs.</p> : <ol>{stack.map((entry) => <li key={entry.id}>{entry.instanceKey ?? entry.id}</li>)}</ol>}</section>

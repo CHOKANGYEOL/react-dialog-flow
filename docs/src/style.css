@@ -221,12 +221,14 @@ p {
   margin-bottom: 2rem;
 }
 .playground-grid {
+  align-items: start;
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
   margin-top: 1.75rem;
 }
 .panel {
+  align-self: start;
   background: #1b1f2a;
   border: 1px solid #2b3242;
   border-radius: 0.75rem;
@@ -240,6 +242,10 @@ p {
 }
 .event-log li + li {
   margin-top: 0.45rem;
+}
+.event-log {
+  max-height: 18rem;
+  overflow-y: auto;
 }
 
 .primary {
@@ -258,7 +264,19 @@ p {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding: 0.625rem;
+}
+.control-group {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+}
+.floating-controls button,
+.dialog-dock button,
+.stack-count {
+  flex: 0 0 auto;
 }
 .floating-controls {
   bottom: 1.25rem;
@@ -299,6 +317,40 @@ p {
 .dialog-panel p {
   color: #536079;
 }
+.choice-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.choice-list button {
+  background: #e8eefb;
+  color: #182033;
+  text-align: left;
+}
+.choice-list button:hover {
+  background: #d9e6ff;
+}
+.field {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.85rem;
+}
+.field span {
+  color: #536079;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.field input {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  color: #182033;
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+}
+.field input:focus {
+  border-color: #77a5ff;
+  outline: 2px solid rgb(119 165 255 / 28%);
+}
 .dialog-actions {
   display: flex;
   gap: 0.5rem;
@@ -320,10 +372,13 @@ p {
   }
   .floating-controls,
   .dialog-dock {
+    flex-wrap: nowrap;
     justify-content: center;
   }
-  .stack-count {
-    width: 100%;
-    text-align: center;
+  .floating-controls {
+    justify-content: flex-start;
+  }
+  .dialog-dock {
+    justify-content: flex-start;
   }
 }
