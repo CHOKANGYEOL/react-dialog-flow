@@ -61,7 +61,26 @@ p {
   color: #a9b2c5;
 }
 .hero {
-  max-width: 52rem;
+  max-width: 68rem;
+}
+.hero-brand {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+.hero-logo {
+  height: 2.4rem;
+  width: 2.4rem;
+}
+.hero-layout {
+  align-items: center;
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.44fr);
+}
+.hero-art {
+  filter: drop-shadow(0 24px 55px rgb(20 136 255 / 22%));
+  max-width: 100%;
 }
 .hero .intro {
   font-size: 1.15rem;
@@ -292,8 +311,12 @@ p {
     padding-top: 3.5rem;
   }
   .docs-grid,
+  .hero-layout,
   .playground-grid {
     grid-template-columns: 1fr;
+  }
+  .hero-art {
+    max-width: 18rem;
   }
   .floating-controls,
   .dialog-dock {

@@ -5,12 +5,29 @@ export function App() {
   return (
     <main>
       <header className="hero">
-        <p className="eyebrow">react-dialog-flow</p>
-        <h1>Dialogs are flows, not just booleans.</h1>
-        <p className="intro">
-          Open React dialogs from anywhere, await typed results, and keep
-          stacked flows out of your page state.
-        </p>
+        <div className="hero-brand">
+          <img
+            alt=""
+            aria-hidden="true"
+            className="hero-logo"
+            src="/logo-mark.svg"
+          />
+          <p className="eyebrow">react-dialog-flow</p>
+        </div>
+        <div className="hero-layout">
+          <div>
+            <h1>Dialogs are flows, not just booleans.</h1>
+            <p className="intro">
+              Open React dialogs from anywhere, await typed results, and keep
+              stacked flows out of your page state.
+            </p>
+          </div>
+          <img
+            alt="Stacked dialog panels connected by a flowing async path"
+            className="hero-art"
+            src="/logo-mark.svg"
+          />
+        </div>
         <pre className="hero-example" aria-label="Async dialog result example">
           <code>{`const confirmed = await openAsync<boolean>(ConfirmDialog, {
   title: 'Delete project?',

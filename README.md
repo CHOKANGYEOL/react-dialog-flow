@@ -1,4 +1,12 @@
-# react-dialog-flow
+<p align="center">
+  <img src="https://dialog-flow.kangyeol.com/logo-mark.svg" alt="react-dialog-flow logo" width="96" height="96" />
+</p>
+
+<h1 align="center">react-dialog-flow</h1>
+
+<p align="center">
+  Async dialog stacks for React.
+</p>
 
 A typed React dialog stack for component-driven flows, nested dialogs, and
 result-bearing async work.
