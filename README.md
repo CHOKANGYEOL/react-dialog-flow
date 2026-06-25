@@ -124,6 +124,20 @@ default focus placement or restoration is not appropriate. Customize the
 optional theme through classes, `backdropProps`, `panel`, `overlay`, and CSS
 custom properties.
 
+```css
+.danger-dialog {
+  --rdf-dialog-panel-background: #111827;
+  --rdf-dialog-panel-color: #f9fafb;
+  --rdf-dialog-panel-radius: 1.25rem;
+  --rdf-dialog-close-icon-size: 1.5rem;
+}
+
+dialog.rdf-dialog .rdf-dialog__close-icon {
+  width: 2rem;
+  height: 2rem;
+}
+```
+
 ## Documentation playground
 
 The live documentation and playground are available at

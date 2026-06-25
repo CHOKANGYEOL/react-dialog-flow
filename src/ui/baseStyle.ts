@@ -33,7 +33,7 @@ dialog.rdf-dialog::backdrop {
   opacity: 1;
   padding: 0;
   position: absolute;
-  transition: opacity var(--dialog-motion-ms) ease;
+  transition: opacity var(--dialog-motion-ms) var(--rdf-dialog-motion-easing, ease);
   width: 100%;
 }
 
@@ -48,10 +48,10 @@ dialog.rdf-dialog::backdrop {
   position: relative;
   transform: none;
   transition:
-    opacity var(--dialog-motion-ms) ease,
-    transform var(--dialog-motion-ms) ease;
+    opacity var(--dialog-motion-ms) var(--rdf-dialog-motion-easing, ease),
+    transform var(--dialog-motion-ms) var(--rdf-dialog-motion-easing, ease);
   width: min(100%, var(--rdf-dialog-panel-width, 32rem));
-  z-index: 1;
+  z-index: var(--rdf-dialog-panel-z-index, 1);
 }
 
 .rdf-dialog__header {
@@ -70,8 +70,8 @@ dialog.rdf-dialog::backdrop {
 }
 
 .rdf-dialog__close-icon {
-  height: 1.25rem;
-  width: 1.25rem;
+  height: var(--rdf-dialog-close-icon-size, 1.25rem);
+  width: var(--rdf-dialog-close-icon-size, 1.25rem);
 }
 
 .rdf-dialog[data-state="enter"] .rdf-dialog__backdrop,

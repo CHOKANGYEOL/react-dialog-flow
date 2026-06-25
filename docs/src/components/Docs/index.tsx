@@ -181,7 +181,13 @@ import 'react-dialog-flow/ui/style.css';
     <Dialog.Title>Delete project?</Dialog.Title>
   </Dialog.Header>
   <Dialog.Description>This cannot be undone.</Dialog.Description>
-</Dialog>`}</CodeExample>
+</Dialog>
+
+.danger-dialog {
+  --rdf-dialog-panel-background: #111827;
+  --rdf-dialog-panel-color: #f9fafb;
+  --rdf-dialog-close-icon-size: 1.5rem;
+}`}</CodeExample>
           <div>
             <p>
               The optional UI primitive uses native <code>&lt;dialog&gt;</code>{" "}
@@ -194,6 +200,11 @@ import 'react-dialog-flow/ui/style.css';
               want the bundled theme. <code>Dialog.Title</code> supplies the
               accessible name, and <code>Dialog.Description</code> adds optional
               supporting text.
+            </p>
+            <p className="muted">
+              Prefer CSS custom properties for common visual changes. Slot
+              classes such as <code>.rdf-dialog__close-icon</code> remain
+              available when you need selector-level overrides.
             </p>
           </div>
         </div>
