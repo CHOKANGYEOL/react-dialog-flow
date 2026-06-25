@@ -5,6 +5,8 @@ the package itself to demonstrate component stacks, nested dialogs, async
 results, `closeTop`, `closeAll`, Escape dismissal, and the optional UI
 primitive.
 
+Production docs: https://dialog-flow.kangyeol.com
+
 Run it from the repository root:
 
 ```bash

@@ -3,6 +3,8 @@
 A typed React dialog stack for component-driven flows, nested dialogs, and
 result-bearing async work.
 
+Docs and live playground: https://dialog-flow.kangyeol.com
+
 ## Install
 
 ```bash
@@ -121,9 +123,9 @@ properties.
 
 ## Documentation playground
 
-The Vite example is also the local documentation playground. It exercises
-stacking, `closeTop`, `closeAll`, Escape handling, async results, and the UI
-primitive.
+The live documentation and playground are available at
+https://dialog-flow.kangyeol.com. The local Vite docs app exercises stacking,
+`closeTop`, `closeAll`, Escape handling, async results, and the UI primitive.
 
 ```bash
 pnpm docs

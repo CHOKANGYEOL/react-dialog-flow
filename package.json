@@ -1,7 +1,7 @@
 {
   "name": "react-dialog-flow",
   "version": "0.1.0-beta.1",
-  "description": "A headless dialog stack manager for React.",
+  "description": "A typed React dialog stack with async results and optional native-modal UI primitives.",
   "keywords": [
     "react",
     "dialog",
@@ -12,6 +12,14 @@
     "typescript"
   ],
   "license": "MIT",
+  "homepage": "https://dialog-flow.kangyeol.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CHOGANGYEOL/react-dialog-flow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CHOGANGYEOL/react-dialog-flow/issues"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
