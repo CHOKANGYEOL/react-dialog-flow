@@ -176,7 +176,7 @@ const { complete } = useDialogInstance<boolean>();
           <CodeExample>{`import { Dialog } from 'react-dialog-flow/ui';
 import 'react-dialog-flow/ui/style.css';
 
-<Dialog closeOnBackdrop>
+<Dialog closeOnBackdrop closeOnEscape={false}>
   <Dialog.Header>
     <Dialog.Title>Delete project?</Dialog.Title>
   </Dialog.Header>
@@ -205,6 +205,11 @@ import 'react-dialog-flow/ui/style.css';
               Prefer CSS custom properties for common visual changes. Slot
               classes such as <code>.rdf-dialog__close-icon</code> remain
               available when you need selector-level overrides.
+            </p>
+            <p className="muted">
+              Escape closes dialogs by default. Use{" "}
+              <code>closeOnEscape={`{false}`}</code> for flows that require an
+              explicit action.
             </p>
           </div>
         </div>

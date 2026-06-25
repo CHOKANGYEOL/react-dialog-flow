@@ -125,7 +125,7 @@ import 'react-dialog-flow/ui/style.css';
 function ConfirmDialog() {
   const { complete } = useDialogInstance<boolean>();
 
-  return <Dialog closeOnBackdrop>
+  return <Dialog closeOnBackdrop closeOnEscape={false}>
     <Dialog.Header>
       <Dialog.Title>Delete project?</Dialog.Title>
     </Dialog.Header>
@@ -142,6 +142,9 @@ optional supporting text. Use `initialFocusRef` and `finalFocusRef` when the
 default focus placement or restoration is not appropriate. Customize the
 optional theme through classes, `backdropProps`, `panel`, `overlay`, and CSS
 custom properties.
+
+Escape closes dialogs by default. Set `closeOnEscape={false}` when a flow must
+be completed or dismissed explicitly.
 
 ```css
 .danger-dialog {
