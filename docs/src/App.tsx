@@ -29,12 +29,18 @@ export function App() {
           />
         </div>
         <pre className="hero-example" aria-label="Async dialog result example">
-          <code>{`const confirmed = await openAsync<boolean>(ConfirmDialog, {
-  title: 'Delete project?',
+          <code>{`const user = await openAsync<User | null>(UserSearchDialog, {
+  onDismiss: () => null,
+});
+
+if (!user) return;
+
+const confirmed = await openAsync<boolean>(ConfirmDialog, {
+  title: \`Add \${user.name}?\`,
   onDismiss: () => false,
 });
 
-if (confirmed) await deleteProject();`}</code>
+if (confirmed) await addUser(user.id);`}</code>
         </pre>
         <nav aria-label="Documentation" className="docs-nav">
           <a href="#install">Install</a>

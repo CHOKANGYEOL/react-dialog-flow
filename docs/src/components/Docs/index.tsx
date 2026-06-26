@@ -151,25 +151,31 @@ closeAll(); // asks every open entry to close`}</CodeExample>
         <div className="docs-grid">
           <div>
             <p>
-              <code>openAsync</code> is the ergonomic API. A dismiss resolves to{" "}
-              <code>false</code> unless you provide an <code>onDismiss</code>{" "}
-              fallback. For flows where the reason matters, use{" "}
-              <code>openAsyncResult</code>.
+              <code>openAsync</code> lets the caller compose dialogs like
+              ordinary async functions. Return a typed value from one dialog,
+              branch on it, then open the next dialog without spreading
+              transient modal state through the page.
             </p>
             <p>
-              The promise resolves after the entry has finished closing, not
-              when its button is first pressed.
+              A dismiss resolves to <code>false</code> by default, or to the
+              value returned by <code>onDismiss</code>. Use{" "}
+              <code>openAsyncResult</code> when the dismissal reason matters.
             </p>
           </div>
-          <CodeExample>{`const confirmed = await openAsync<boolean>(ConfirmDialog, {
-  title: 'Delete project?',
+          <CodeExample>{`const user = await openAsync<User | null>(UserSearchDialog, {
+  onDismiss: () => null,
+});
+
+if (!user) return;
+
+const confirmed = await openAsync<boolean>(ConfirmDialog, {
+  title: \`Add \${user.name}?\`,
   onDismiss: () => false,
 });
 
-if (confirmed) await deleteProject();
+if (confirmed) await addUser(user.id);
 
-const { complete } = useDialogInstance<boolean>();
-<button onClick={() => complete(true)}>Delete</button>`}</CodeExample>
+// Promises resolve after the dialog exit lifecycle completes.`}</CodeExample>
         </div>
       </section>
       <section className="docs-section" id="ui">

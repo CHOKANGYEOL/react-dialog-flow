@@ -5,8 +5,10 @@ import {
   FormDialog,
   NestedDialog,
   SelectDialog,
+  UserSearchDialog,
   type Log,
   type ProfileFormValue,
+  type User,
 } from "../Dialogs";
 
 export function FlowControls({
@@ -37,19 +39,37 @@ export function FlowControls({
     });
     onLog(`Confirm opened (${id.slice(0, 8)})`);
   };
-  const openAsyncConfirm = async () => {
-    onLog("Async confirm opened");
-    const value = await openAsync<boolean>(ConfirmDialog, {
-      title: "Async confirm",
-      description:
-        "Choose a result, then watch the log after the exit animation completes.",
+  const openInviteFlow = async () => {
+    onLog("Invite flow started");
+    const user = await openAsync<User | null>(UserSearchDialog, {
       onLog,
       onDismiss: (reason) => {
-        onLog(`Async dismissed: ${reason}`);
+        onLog(`User search dismissed: ${reason}`);
+        return null;
+      },
+    });
+
+    if (!user) {
+      onLog("Invite flow stopped before confirmation");
+      return;
+    }
+
+    onLog(`Selected user: ${user.name}`);
+    const confirmed = await openAsync<boolean>(ConfirmDialog, {
+      title: `Add ${user.name}?`,
+      description: `Confirm adding ${user.name} (${user.role}) to the workspace.`,
+      onLog,
+      onDismiss: (reason) => {
+        onLog(`Invite confirmation dismissed: ${reason}`);
         return false;
       },
     });
-    onLog(`Async completed: ${String(value)}`);
+
+    onLog(
+      confirmed
+        ? `Added user: ${user.name} (${user.id})`
+        : `Invite cancelled for ${user.name}`,
+    );
   };
   const openSelect = async () => {
     onLog("Select dialog opened");
@@ -93,7 +113,7 @@ export function FlowControls({
           Confirm
         </button>
         <button onClick={openAlert}>Alert</button>
-        <button onClick={() => void openAsyncConfirm()}>Async</button>
+        <button onClick={() => void openInviteFlow()}>Invite flow</button>
         <button onClick={() => void openSelect()}>Select</button>
         <button onClick={() => void openForm()}>Form</button>
         <button onClick={openNested}>Nested</button>

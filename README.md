@@ -111,28 +111,26 @@ placement.
 
 ## Async results
 
-Use `openAsync` when the caller only needs a value. A normal dismissal resolves
-to `false` by default, or to the value returned by `onDismiss`.
+Use `openAsync` when the caller only needs a value. You can sequence dialogs as
+ordinary async work while each dialog owns its own UI and local state.
 
 ```tsx
-function ConfirmDialog() {
-  const { complete } = useDialogInstance<boolean>();
-  return <button onClick={() => complete(true)}>Confirm</button>;
-}
+const user = await openAsync<User | null>(UserSearchDialog, {
+  onDismiss: () => null,
+});
 
-function DeleteButton() {
-  const { openAsync } = useDialog();
+if (!user) return;
 
-  const remove = async () => {
-    const confirmed = await openAsync<boolean>(ConfirmDialog, {
-      onDismiss: () => false,
-    });
-    if (confirmed) await deleteProject();
-  };
+const confirmed = await openAsync<boolean>(ConfirmDialog, {
+  title: `Add ${user.name}?`,
+  onDismiss: () => false,
+});
 
-  return <button onClick={() => void remove()}>Delete project</button>;
-}
+if (confirmed) await addUser(user.id);
 ```
+
+A normal dismissal resolves to `false` by default, or to the value returned by
+`onDismiss`.
 
 Use `openAsyncResult` when the dismissal reason matters.
 

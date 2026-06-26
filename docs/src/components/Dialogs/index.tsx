@@ -8,8 +8,10 @@ type ConfirmProps = { title: string; description: string; onLog: Log };
 type AlertProps = { message: string; onLog: Log };
 type SelectProps = { onLog: Log };
 type FormProps = { onLog: Log };
+type UserSearchProps = { onLog: Log };
 type NestedProps = { onLog: Log };
 export type ProfileFormValue = { name: string; role: string };
+export type User = { id: string; name: string; role: string };
 
 const dialogProps = {
   motionDuration: 180,
@@ -86,6 +88,42 @@ export function SelectDialog({ onLog }: SelectProps) {
           ))}
         </div>
       </Dialog.Body>
+    </Dialog>
+  );
+}
+
+export function UserSearchDialog({ onLog }: UserSearchProps) {
+  const { close, complete } = useDialogInstance<User | null>();
+  const users: User[] = [
+    { id: "usr_ada", name: "Ada Lovelace", role: "Engineer" },
+    { id: "usr_grace", name: "Grace Hopper", role: "Platform lead" },
+    { id: "usr_katherine", name: "Katherine Johnson", role: "Analyst" },
+  ];
+
+  return (
+    <Dialog
+      {...dialogProps}
+      closeOnBackdrop
+      overlay={<FlowControls className="dialog-dock" onLog={onLog} />}
+    >
+      <Dialog.Header className="dialog-header">
+        <Dialog.Title>Find a user</Dialog.Title>
+      </Dialog.Header>
+      <Dialog.Body>
+        <Dialog.Description>
+          Return a selected domain object, then continue the flow in the caller.
+        </Dialog.Description>
+        <div className="choice-list">
+          {users.map((user) => (
+            <button key={user.id} onClick={() => complete(user)}>
+              {user.name} · {user.role}
+            </button>
+          ))}
+        </div>
+      </Dialog.Body>
+      <Dialog.Footer className="dialog-actions">
+        <button onClick={() => close("programmatic")}>Cancel search</button>
+      </Dialog.Footer>
     </Dialog>
   );
 }
