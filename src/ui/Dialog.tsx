@@ -39,6 +39,121 @@ function unlockScroll() {
   originalDocumentOverflow = null;
 }
 
+const focusableSelector = [
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+function focusableElements(container: HTMLElement) {
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(focusableSelector),
+  ).filter(
+    (element) =>
+      element.tabIndex >= 0 &&
+      !element.hasAttribute("disabled") &&
+      element.getAttribute("aria-hidden") !== "true",
+  );
+}
+
+function focusFallbackTarget(element: HTMLDialogElement) {
+  const [first] = focusableElements(element);
+  (first ?? element).focus();
+}
+
+function topLevelElement(element: HTMLElement) {
+  let current = element;
+  const { body } = element.ownerDocument;
+  while (current.parentElement && current.parentElement !== body) {
+    current = current.parentElement;
+  }
+  return current;
+}
+
+function enableModalFallback(element: HTMLDialogElement) {
+  const ownerDocument = element.ownerDocument;
+  const root = topLevelElement(element);
+  const hadTabIndex = element.hasAttribute("tabindex");
+  const tabIndex = element.getAttribute("tabindex");
+  const restoredElements: Array<{
+    element: HTMLElement;
+    ariaHidden: string | null;
+    inert: boolean;
+  }> = [];
+
+  if (!hadTabIndex) element.tabIndex = -1;
+
+  Array.from(ownerDocument.body.children).forEach((child) => {
+    if (!(child instanceof HTMLElement) || child === root) return;
+
+    restoredElements.push({
+      element: child,
+      ariaHidden: child.getAttribute("aria-hidden"),
+      inert: child.inert === true,
+    });
+    child.inert = true;
+    child.setAttribute("aria-hidden", "true");
+  });
+
+  const onFocusIn = (event: FocusEvent) => {
+    if (event.target instanceof Node && element.contains(event.target)) return;
+    focusFallbackTarget(element);
+  };
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== "Tab") return;
+
+    const focusable = focusableElements(element);
+    if (focusable.length === 0) {
+      event.preventDefault();
+      element.focus();
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
+
+    if (
+      !(ownerDocument.activeElement instanceof Node) ||
+      !element.contains(ownerDocument.activeElement)
+    ) {
+      event.preventDefault();
+      first.focus();
+      return;
+    }
+
+    if (event.shiftKey && ownerDocument.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+
+    if (!event.shiftKey && ownerDocument.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  ownerDocument.addEventListener("focusin", onFocusIn);
+  ownerDocument.addEventListener("keydown", onKeyDown);
+
+  return () => {
+    ownerDocument.removeEventListener("focusin", onFocusIn);
+    ownerDocument.removeEventListener("keydown", onKeyDown);
+    if (hadTabIndex && tabIndex !== null)
+      element.setAttribute("tabindex", tabIndex);
+    else element.removeAttribute("tabindex");
+    restoredElements.forEach(({ element: restored, ariaHidden, inert }) => {
+      restored.inert = inert;
+      if (ariaHidden === null) restored.removeAttribute("aria-hidden");
+      else restored.setAttribute("aria-hidden", ariaHidden);
+    });
+  };
+}
+
 export type DialogPanelProps<C extends ElementType> = { as?: C } & Omit<
   ComponentPropsWithoutRef<C>,
   "children"
@@ -201,6 +316,7 @@ function DialogRoot<C extends ElementType = "div">({
   useEffect(() => {
     const element = dialogRef.current;
     if (!element) return;
+    let restoreModalFallback: (() => void) | undefined;
     if (shouldLockScroll) lockScroll();
     previouslyFocusedElementRef.current =
       document.activeElement instanceof HTMLElement
@@ -211,10 +327,14 @@ function DialogRoot<C extends ElementType = "div">({
         element.showModal();
       } catch {
         element.setAttribute("open", "");
+        element.setAttribute("data-modal-fallback", "true");
+        restoreModalFallback = enableModalFallback(element);
       }
     }
     enterFrameRef.current = requestAnimationFrame(() => {
-      initialFocusRefRef.current?.current?.focus();
+      const initialFocusElement = initialFocusRefRef.current?.current;
+      if (initialFocusElement) initialFocusElement.focus();
+      else if (restoreModalFallback) focusFallbackTarget(element);
       setPhase((current) => (current === "enter" ? "open" : current));
     });
     return () => {
@@ -222,6 +342,8 @@ function DialogRoot<C extends ElementType = "div">({
         cancelAnimationFrame(enterFrameRef.current);
       if (closeFallbackTimerRef.current !== null)
         window.clearTimeout(closeFallbackTimerRef.current);
+      restoreModalFallback?.();
+      element.removeAttribute("data-modal-fallback");
       if (element.open) element.close();
       if (shouldLockScroll) unlockScroll();
       const finalFocusElement = finalFocusRefRef.current?.current;

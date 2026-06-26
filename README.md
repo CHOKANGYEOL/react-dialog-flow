@@ -236,6 +236,10 @@ base styles are injected automatically so the primitive works without a CSS
 import. Add `react-dialog-flow/ui/style.css` only when you want the bundled
 default theme.
 
+`Dialog` prefers native `showModal()`. If the browser refuses that call, it
+falls back to the `open` attribute while marking background content inert,
+hiding it from assistive technology, and keeping focus inside the dialog.
+
 ```tsx
 import { Dialog } from 'react-dialog-flow/ui';
 import 'react-dialog-flow/ui/style.css';

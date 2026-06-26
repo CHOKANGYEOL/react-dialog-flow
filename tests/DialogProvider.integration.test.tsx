@@ -1097,6 +1097,54 @@ describe("DialogProvider integration", () => {
     expect(document.activeElement).toBe(lastCall?.[0]);
   });
 
+  it("keeps showModal fallback dialogs modal for assistive technology and focus", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(
+      () => {
+        throw new Error("showModal failed");
+      },
+    );
+    render(
+      <>
+        <button>Outside target</button>
+        <DialogProvider>
+          <OpenFocusFlow />
+        </DialogProvider>
+      </>,
+    );
+
+    const outsideTarget = screen.getByRole("button", {
+      name: "Outside target",
+    });
+    const appRoot = outsideTarget.parentElement as HTMLElement;
+    await user.click(screen.getByRole("button", { name: "Open focus dialog" }));
+
+    const initialTarget = await screen.findByRole("button", {
+      name: "Initial target",
+    });
+    const dialog = document.querySelector("dialog");
+    expect(dialog).not.toBeNull();
+    expect(dialog?.getAttribute("data-modal-fallback")).toBe("true");
+    expect(appRoot.inert).toBe(true);
+    expect(appRoot.getAttribute("aria-hidden")).toBe("true");
+    await waitFor(() => expect(document.activeElement).toBe(initialTarget));
+
+    outsideTarget.focus();
+    fireEvent.focusIn(outsideTarget);
+
+    await waitFor(() =>
+      expect(dialog?.contains(document.activeElement)).toBe(true),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Finish focus dialog" }),
+    );
+
+    await waitFor(() => expect(document.querySelector("dialog")).toBeNull());
+    expect(appRoot.inert).toBe(false);
+    expect(appRoot.getAttribute("aria-hidden")).toBeNull();
+  });
+
   it("uses the supplied dismiss fallback when closeTop closes an async entry", async () => {
     const user = userEvent.setup();
     const onDismiss = vi.fn(() => false);

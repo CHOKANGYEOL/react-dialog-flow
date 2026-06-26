@@ -213,6 +213,13 @@ import 'react-dialog-flow/ui/style.css';
               automatically when <code>Dialog</code> renders.
             </p>
             <p>
+              <code>Dialog</code> prefers native <code>showModal()</code>. If
+              the browser refuses that call, it falls back to the{" "}
+              <code>open</code> attribute while marking background content
+              inert, hiding it from assistive technology, and keeping focus
+              inside the dialog.
+            </p>
+            <p>
               Import <code>react-dialog-flow/ui/style.css</code> only when you
               want the bundled theme. <code>Dialog.Title</code> supplies the
               accessible name, and <code>Dialog.Description</code> adds optional
