@@ -8,6 +8,7 @@ type ConfirmProps = { title: string; description: string; onLog: Log };
 type AlertProps = { message: string; onLog: Log };
 type SelectProps = { onLog: Log };
 type FormProps = { onLog: Log };
+type GuardedFormProps = { onLog: Log };
 type UserSearchProps = { onLog: Log };
 type NestedProps = { onLog: Log };
 export type ProfileFormValue = { name: string; role: string };
@@ -146,6 +147,71 @@ export function FormDialog({ onLog }: FormProps) {
       <Dialog.Body>
         <Dialog.Description>
           Submit structured form data through <code>complete(value)</code>.
+        </Dialog.Description>
+        <label className="field">
+          <span>Name</span>
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </label>
+        <label className="field">
+          <span>Role</span>
+          <input
+            value={role}
+            onChange={(event) => setRole(event.target.value)}
+          />
+        </label>
+      </Dialog.Body>
+      <Dialog.Footer className="dialog-actions">
+        <button
+          className="primary"
+          onClick={() => complete({ name: name.trim(), role: role.trim() })}
+        >
+          Save profile
+        </button>
+      </Dialog.Footer>
+    </Dialog>
+  );
+}
+
+export function GuardedFormDialog({ onLog }: GuardedFormProps) {
+  const { openAsync } = useDialog();
+  const { complete } = useDialogInstance<ProfileFormValue>();
+  const [name, setName] = useState("Ada Lovelace");
+  const [role, setRole] = useState("Engineer");
+  const isDirty = name !== "Ada Lovelace" || role !== "Engineer";
+
+  return (
+    <Dialog
+      {...dialogProps}
+      closeOnBackdrop
+      overlay={<FlowControls className="dialog-dock" onLog={onLog} />}
+      shouldClose={async (reason) => {
+        onLog(`Guard requested by ${reason}`);
+        if (!isDirty) return true;
+
+        const confirmed = await openAsync<boolean>(ConfirmDialog, {
+          title: "Discard changes?",
+          description:
+            "The form has unsaved edits. Confirm before this dialog closes.",
+          onLog,
+          onDismiss: () => false,
+        });
+        onLog(
+          confirmed
+            ? "Guard allowed the form to close"
+            : "Guard kept the form open",
+        );
+        return confirmed;
+      }}
+    >
+      <Dialog.Header className="dialog-header">
+        <Dialog.Title>Guarded profile form</Dialog.Title>
+      </Dialog.Header>
+      <Dialog.Body>
+        <Dialog.Description>
+          Edit a field, then try Escape, backdrop, header close, or closeTop.
         </Dialog.Description>
         <label className="field">
           <span>Name</span>

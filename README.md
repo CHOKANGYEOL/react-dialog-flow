@@ -171,6 +171,27 @@ custom properties.
 Escape closes dialogs by default. Set `closeOnEscape={false}` when a flow must
 be completed or dismissed explicitly.
 
+Use `shouldClose` when a dismissal needs a guard. It receives the close reason
+and may return a boolean or a promise. Returning or resolving `false` keeps the
+dialog open. While the promise is pending, additional close requests for the
+same dialog are ignored. `complete(value)` does not run `shouldClose`.
+
+```tsx
+<Dialog
+  closeOnBackdrop
+  shouldClose={async (reason) => {
+    if (reason !== 'backdrop' || !formDirty) return true;
+
+    return await openAsync<boolean>(ConfirmDialog, {
+      title: 'Discard changes?',
+      onDismiss: () => false,
+    });
+  }}
+>
+  ...
+</Dialog>
+```
+
 ```css
 .danger-dialog {
   --rdf-dialog-panel-background: #111827;
@@ -194,7 +215,9 @@ dialog.rdf-dialog .rdf-dialog__close-icon {
 
 The live documentation and playground are available at
 https://dialog-flow.kangyeol.com. The local Vite docs app exercises stacking,
-`closeTop`, `closeAll`, Escape handling, async results, and the UI primitive.
+`closeTop`, `closeAll`, Escape handling, async results, guarded dismissal, and
+the UI primitive. The playground event log keeps the latest 999 entries and can
+be reset while testing flows.
 
 ```bash
 pnpm docs

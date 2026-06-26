@@ -1,9 +1,18 @@
 import { createContext, useContext } from "react";
-import type { CloseReason, RequestClose } from "../core/types";
+import type { CloseReason } from "../core/types";
+
+export type DialogEntryRequestCloseOptions = {
+  skipShouldClose?: boolean;
+};
+
+export type DialogEntryRequestClose = (
+  reason?: CloseReason,
+  options?: DialogEntryRequestCloseOptions,
+) => void;
 
 export type DialogEntryControl = {
   closeEntry: (reason?: CloseReason) => void;
-  setRequestClose: (requestClose: RequestClose | null) => void;
+  setRequestClose: (requestClose: DialogEntryRequestClose | null) => void;
 };
 
 export const DialogEntryControlContext =

@@ -7,9 +7,14 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useRef } from "react";
+import { StrictMode, useRef } from "react";
 import type { RefObject } from "react";
-import { DialogProvider, useDialog, useDialogInstance } from "../src";
+import {
+  DialogProvider,
+  useDialog,
+  useDialogInstance,
+  type CloseReason,
+} from "../src";
 import { Dialog } from "../src/ui";
 
 beforeAll(() => {
@@ -131,6 +136,32 @@ function NoScrollLockDialog() {
       <Dialog.Header>
         <Dialog.Title>No scroll lock</Dialog.Title>
       </Dialog.Header>
+    </Dialog>
+  );
+}
+
+function GuardedDialog({
+  onGuard,
+  shouldClose,
+}: {
+  onGuard?: (reason: CloseReason) => void;
+  shouldClose: (reason: CloseReason) => boolean | Promise<boolean>;
+}) {
+  const { close, complete } = useDialogInstance<boolean>();
+  return (
+    <Dialog
+      closeOnBackdrop
+      motionDuration={0}
+      shouldClose={(reason) => {
+        onGuard?.(reason);
+        return shouldClose(reason);
+      }}
+    >
+      <Dialog.Header>
+        <Dialog.Title>Guarded dialog</Dialog.Title>
+      </Dialog.Header>
+      <button onClick={() => close()}>Request close</button>
+      <button onClick={() => complete(true)}>Complete guarded</button>
     </Dialog>
   );
 }
@@ -352,6 +383,32 @@ function OpenEscapeDisabledFlow() {
   );
 }
 
+function OpenGuardedResultFlow({
+  onGuard,
+  onResult,
+  shouldClose,
+}: {
+  onGuard?: (reason: CloseReason) => void;
+  onResult: (value: unknown) => void;
+  shouldClose: (reason: CloseReason) => boolean | Promise<boolean>;
+}) {
+  const { openAsyncResult } = useDialog();
+  return (
+    <button
+      onClick={async () =>
+        onResult(
+          await openAsyncResult<boolean>(GuardedDialog, {
+            onGuard,
+            shouldClose,
+          }),
+        )
+      }
+    >
+      Open guarded
+    </button>
+  );
+}
+
 function PendingAsyncFlow({
   onResult,
 }: {
@@ -445,6 +502,192 @@ function clickHeaderClose() {
 }
 
 describe("DialogProvider integration", () => {
+  it("keeps a dialog open when shouldClose returns false", async () => {
+    const user = userEvent.setup();
+    const onGuard = vi.fn();
+    const shouldClose = vi.fn(() => false);
+    const onResult = vi.fn();
+    render(
+      <DialogProvider>
+        <OpenGuardedResultFlow
+          onGuard={onGuard}
+          onResult={onResult}
+          shouldClose={shouldClose}
+        />
+      </DialogProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open guarded" }));
+    await screen.findByRole("heading", { name: "Guarded dialog" });
+    await waitFor(() =>
+      expect(document.querySelector("dialog")?.dataset.state).toBe("open"),
+    );
+    clickTopBackdrop();
+
+    await waitFor(() => expect(onGuard).toHaveBeenCalledWith("backdrop"));
+    expect(shouldClose).toHaveBeenCalledWith("backdrop");
+    expect(document.querySelector("dialog")?.dataset.state).toBe("open");
+    expect(onResult).not.toHaveBeenCalled();
+  });
+
+  it("waits for async shouldClose and ignores duplicate close requests while pending", async () => {
+    const user = userEvent.setup();
+    const onGuard = vi.fn();
+    const onResult = vi.fn();
+    let resolveGuard: (value: boolean) => void = () => undefined;
+    const shouldClose = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveGuard = resolve;
+        }),
+    );
+    render(
+      <DialogProvider>
+        <OpenGuardedResultFlow
+          onGuard={onGuard}
+          onResult={onResult}
+          shouldClose={shouldClose}
+        />
+      </DialogProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open guarded" }));
+    await screen.findByRole("heading", { name: "Guarded dialog" });
+    await waitFor(() =>
+      expect(document.querySelector("dialog")?.dataset.state).toBe("open"),
+    );
+    clickHeaderClose();
+    clickTopBackdrop();
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(shouldClose).toHaveBeenCalledTimes(1);
+    expect(onGuard).toHaveBeenCalledWith("header");
+    expect(document.querySelector("dialog")?.dataset.state).toBe("open");
+    expect(onResult).not.toHaveBeenCalled();
+
+    resolveGuard(true);
+
+    await waitFor(() =>
+      expect(onResult).toHaveBeenCalledWith({
+        status: "dismissed",
+        reason: "header",
+      }),
+    );
+    expect(document.querySelector("dialog")).toBeNull();
+  });
+
+  it("closes after an async shouldClose guard resolves inside StrictMode", async () => {
+    const user = userEvent.setup();
+    const shouldClose = vi.fn(() => Promise.resolve(true));
+    const onResult = vi.fn();
+    render(
+      <StrictMode>
+        <DialogProvider>
+          <OpenGuardedResultFlow
+            onResult={onResult}
+            shouldClose={shouldClose}
+          />
+        </DialogProvider>
+      </StrictMode>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open guarded" }));
+    await screen.findByRole("heading", { name: "Guarded dialog" });
+    await waitFor(() =>
+      expect(document.querySelector("dialog")?.dataset.state).toBe("open"),
+    );
+    clickHeaderClose();
+
+    await waitFor(() =>
+      expect(onResult).toHaveBeenCalledWith({
+        status: "dismissed",
+        reason: "header",
+      }),
+    );
+    expect(shouldClose).toHaveBeenCalledWith("header");
+    expect(document.querySelector("dialog")).toBeNull();
+  });
+
+  it("runs shouldClose for Escape dismissal", async () => {
+    const user = userEvent.setup();
+    const shouldClose = vi.fn(() => true);
+    const onResult = vi.fn();
+    render(
+      <DialogProvider>
+        <OpenGuardedResultFlow
+          onResult={onResult}
+          shouldClose={shouldClose}
+        />
+      </DialogProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open guarded" }));
+    await screen.findByRole("heading", { name: "Guarded dialog" });
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    await waitFor(() =>
+      expect(onResult).toHaveBeenCalledWith({
+        status: "dismissed",
+        reason: "esc",
+      }),
+    );
+    expect(shouldClose).toHaveBeenCalledWith("esc");
+    expect(document.querySelector("dialog")).toBeNull();
+  });
+
+  it("keeps a dialog open when async shouldClose rejects", async () => {
+    const user = userEvent.setup();
+    const shouldClose = vi.fn(() => Promise.reject(new Error("Nope")));
+    const onResult = vi.fn();
+    render(
+      <DialogProvider>
+        <OpenGuardedResultFlow
+          onResult={onResult}
+          shouldClose={shouldClose}
+        />
+      </DialogProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open guarded" }));
+    await screen.findByRole("heading", { name: "Guarded dialog" });
+    await waitFor(() =>
+      expect(document.querySelector("dialog")?.dataset.state).toBe("open"),
+    );
+    clickHeaderClose();
+
+    await waitFor(() => expect(shouldClose).toHaveBeenCalledWith("header"));
+    expect(document.querySelector("dialog")?.dataset.state).toBe("open");
+    expect(onResult).not.toHaveBeenCalled();
+  });
+
+  it("does not run shouldClose when complete resolves the dialog", async () => {
+    const user = userEvent.setup();
+    const shouldClose = vi.fn(() => false);
+    const onResult = vi.fn();
+    render(
+      <DialogProvider>
+        <OpenGuardedResultFlow
+          onResult={onResult}
+          shouldClose={shouldClose}
+        />
+      </DialogProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open guarded" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Complete guarded" }),
+    );
+
+    await waitFor(() =>
+      expect(onResult).toHaveBeenCalledWith({
+        status: "completed",
+        value: true,
+      }),
+    );
+    expect(shouldClose).not.toHaveBeenCalled();
+    expect(document.querySelector("dialog")).toBeNull();
+  });
+
   it("resolves motionDuration=0 dialogs immediately without waiting for motion events", async () => {
     const user = userEvent.setup();
     const onResult = vi.fn();

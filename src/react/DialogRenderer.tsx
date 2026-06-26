@@ -13,6 +13,7 @@ import {
   DialogEntryDispatchContext,
   DialogStateContext,
 } from "./context";
+import type { DialogEntryRequestClose } from "./DialogEntryControl";
 import { DialogEntryControlContext } from "./DialogEntryControl";
 import { DialogInstanceContext } from "./DialogInstance";
 
@@ -20,7 +21,7 @@ function DialogEntryRenderer({ entry }: { entry: DialogEntry }) {
   const api = useContext(DialogDispatchContext);
   const entryDispatch = useContext(DialogEntryDispatchContext);
   const [registeredRequestClose, setRegisteredRequestClose] =
-    useState<RequestClose | null>(null);
+    useState<DialogEntryRequestClose | null>(null);
   if (!api)
     throw new Error("DialogRenderer must be used inside DialogProvider.");
   if (!entryDispatch)
@@ -33,21 +34,27 @@ function DialogEntryRenderer({ entry }: { entry: DialogEntry }) {
     [entry.id, entryDispatch],
   );
 
-  const requestClose = useCallback<RequestClose>(
-    (reason = "programmatic") => {
+  const requestEntryClose = useCallback<DialogEntryRequestClose>(
+    (reason = "programmatic", options) => {
       if (registeredRequestClose) {
-        registeredRequestClose(reason);
+        registeredRequestClose(reason, options);
         return;
       }
       closeEntry(reason);
     },
     [closeEntry, registeredRequestClose],
   );
+  const requestClose = useCallback<RequestClose>(
+    (reason = "programmatic") => {
+      requestEntryClose(reason);
+    },
+    [requestEntryClose],
+  );
 
   const entryControl = useMemo(
     () => ({
       closeEntry,
-      setRequestClose(next: RequestClose | null) {
+      setRequestClose(next: DialogEntryRequestClose | null) {
         setRegisteredRequestClose(() => next);
       },
     }),
@@ -56,9 +63,9 @@ function DialogEntryRenderer({ entry }: { entry: DialogEntry }) {
   const complete = useCallback(
     (value: unknown) => {
       entryDispatch.setResult(entry.id, value);
-      requestClose("programmatic");
+      requestEntryClose("programmatic", { skipShouldClose: true });
     },
-    [entry.id, entryDispatch, requestClose],
+    [entry.id, entryDispatch, requestEntryClose],
   );
   const instance = useMemo(
     () => ({ id: entry.id, close: requestClose, complete }),

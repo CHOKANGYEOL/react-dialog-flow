@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Add `Dialog` `shouldClose(reason)` for synchronous or asynchronous dismissal
+  guards.
+- Ignore additional close requests for the same dialog while an asynchronous
+  `shouldClose` guard is pending.
+- Keep `complete(value)` as an intentional result path that bypasses
+  `shouldClose`.
+- Add a guarded form example to the documentation playground.
+- Improve the playground event log with stable entry keys, a 999-entry limit,
+  sticky count header, and reset control.
+
 ## 0.1.1 — 2026-06-26
 
 - Fix `Dialog` so `closeOnEscape={false}` also blocks Escape close requests

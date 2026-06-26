@@ -4,6 +4,7 @@ export type {
   DialogDescriptionProps,
   DialogPanelProps,
   DialogProps,
+  DialogShouldClose,
   DialogTitleProps,
 } from "./Dialog";
 export { DialogHeader } from "./DialogHeader";

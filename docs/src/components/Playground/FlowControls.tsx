@@ -1,8 +1,10 @@
+import { useMemo, useSyncExternalStore } from "react";
 import { useDialog, useDialogStack } from "react-dialog-flow";
 import {
   AlertDialog,
   ConfirmDialog,
   FormDialog,
+  GuardedFormDialog,
   NestedDialog,
   SelectDialog,
   UserSearchDialog,
@@ -11,6 +13,28 @@ import {
   type User,
 } from "../Dialogs";
 
+const pendingFlowKeys = new Set<string>();
+const pendingFlowListeners = new Set<() => void>();
+const activeFlowRunIds = new Map<string, number>();
+let nextFlowRunId = 0;
+
+function emitPendingFlowChange() {
+  pendingFlowListeners.forEach((listener) => listener());
+}
+
+function subscribePendingFlows(listener: () => void) {
+  pendingFlowListeners.add(listener);
+  return () => pendingFlowListeners.delete(listener);
+}
+
+function getPendingFlowSnapshot() {
+  return [...pendingFlowKeys].sort().join("|");
+}
+
+function isCurrentFlowRun(key: string, runId: number) {
+  return activeFlowRunIds.get(key) === runId;
+}
+
 export function FlowControls({
   className,
   onLog,
@@ -18,8 +42,36 @@ export function FlowControls({
   className: string;
   onLog: Log;
 }) {
-  const { closeAll, closeTop, open, openAsync } = useDialog();
+  const { closeAll, closeTop, open, openAsyncResult } = useDialog();
   const stack = useDialogStack();
+  const pendingFlowSnapshot = useSyncExternalStore(
+    subscribePendingFlows,
+    getPendingFlowSnapshot,
+    getPendingFlowSnapshot,
+  );
+  const pendingFlows = useMemo(
+    () =>
+      new Set(
+        pendingFlowSnapshot === "" ? [] : pendingFlowSnapshot.split("|"),
+      ),
+    [pendingFlowSnapshot],
+  );
+  const runAsyncFlow = (key: string, flow: (runId: number) => Promise<void>) => {
+    if (pendingFlowKeys.has(key)) return;
+
+    nextFlowRunId += 1;
+    const runId = nextFlowRunId;
+    activeFlowRunIds.set(key, runId);
+    pendingFlowKeys.add(key);
+    emitPendingFlowChange();
+    void flow(runId).finally(() => {
+      if (isCurrentFlowRun(key, runId)) {
+        activeFlowRunIds.delete(key);
+        pendingFlowKeys.delete(key);
+        emitPendingFlowChange();
+      }
+    });
+  };
   const openAlert = () => {
     const id = open(AlertDialog, {
       message:
@@ -39,31 +91,38 @@ export function FlowControls({
     });
     onLog(`Confirm opened (${id.slice(0, 8)})`);
   };
-  const openInviteFlow = async () => {
+  const openInviteFlow = async (runId: number) => {
     onLog("Invite flow started");
-    const user = await openAsync<User | null>(UserSearchDialog, {
+    const userResult = await openAsyncResult<User | null>(UserSearchDialog, {
       onLog,
-      onDismiss: (reason) => {
-        onLog(`User search dismissed: ${reason}`);
-        return null;
-      },
     });
+    if (!isCurrentFlowRun("invite", runId)) return;
 
+    if (userResult.status === "dismissed") {
+      onLog(`User search dismissed: ${userResult.reason}`);
+      onLog("Invite flow stopped before confirmation");
+      return;
+    }
+
+    const user = userResult.value;
     if (!user) {
       onLog("Invite flow stopped before confirmation");
       return;
     }
 
     onLog(`Selected user: ${user.name}`);
-    const confirmed = await openAsync<boolean>(ConfirmDialog, {
+    const confirmationResult = await openAsyncResult<boolean>(ConfirmDialog, {
       title: `Add ${user.name}?`,
       description: `Confirm adding ${user.name} (${user.role}) to the workspace.`,
       onLog,
-      onDismiss: (reason) => {
-        onLog(`Invite confirmation dismissed: ${reason}`);
-        return false;
-      },
     });
+    if (!isCurrentFlowRun("invite", runId)) return;
+
+    if (confirmationResult.status === "dismissed") {
+      onLog(`Invite confirmation dismissed: ${confirmationResult.reason}`);
+    }
+    const confirmed =
+      confirmationResult.status === "completed" && confirmationResult.value;
 
     onLog(
       confirmed
@@ -71,31 +130,49 @@ export function FlowControls({
         : `Invite cancelled for ${user.name}`,
     );
   };
-  const openSelect = async () => {
+  const openSelect = async (runId: number) => {
     onLog("Select dialog opened");
-    const channel = await openAsync<string>(SelectDialog, {
+    const result = await openAsyncResult<string>(SelectDialog, {
       onLog,
-      onDismiss: (reason) => {
-        onLog(`Select dismissed: ${reason}`);
-        return "none";
-      },
     });
-    onLog(`Selected channel: ${channel}`);
+    if (!isCurrentFlowRun("select", runId)) return;
+
+    if (result.status === "dismissed") {
+      onLog(`Select dismissed: ${result.reason}`);
+      return;
+    }
+
+    onLog(`Selected channel: ${result.value}`);
   };
-  const openForm = async () => {
+  const openForm = async (runId: number) => {
     onLog("Form dialog opened");
-    const profile = await openAsync<ProfileFormValue | null>(FormDialog, {
+    const result = await openAsyncResult<ProfileFormValue>(FormDialog, {
       onLog,
-      onDismiss: (reason) => {
-        onLog(`Form dismissed: ${reason}`);
-        return null;
-      },
     });
-    onLog(
-      profile
-        ? `Saved profile: ${profile.name} (${profile.role})`
-        : "Form returned no value",
-    );
+    if (!isCurrentFlowRun("form", runId)) return;
+
+    if (result.status === "dismissed") {
+      onLog(`Form dismissed: ${result.reason}`);
+      return;
+    }
+
+    onLog(`Saved profile: ${result.value.name} (${result.value.role})`);
+  };
+  const openGuardedForm = async (runId: number) => {
+    onLog("Guarded form opened");
+    const result = await openAsyncResult<ProfileFormValue>(GuardedFormDialog, {
+      onLog,
+    });
+    if (!isCurrentFlowRun("guarded-form", runId)) return;
+
+    if (result.status === "completed") {
+      onLog(
+        `Saved guarded profile: ${result.value.name} (${result.value.role})`,
+      );
+      return;
+    }
+
+    onLog(`Guarded form dismissed: ${result.reason}`);
   };
   const openNested = () => {
     const id = open(NestedDialog, {
@@ -113,9 +190,30 @@ export function FlowControls({
           Confirm
         </button>
         <button onClick={openAlert}>Alert</button>
-        <button onClick={() => void openInviteFlow()}>Invite flow</button>
-        <button onClick={() => void openSelect()}>Select</button>
-        <button onClick={() => void openForm()}>Form</button>
+        <button
+          disabled={pendingFlows.has("invite")}
+          onClick={() => runAsyncFlow("invite", openInviteFlow)}
+        >
+          Invite flow
+        </button>
+        <button
+          disabled={pendingFlows.has("select")}
+          onClick={() => runAsyncFlow("select", openSelect)}
+        >
+          Select
+        </button>
+        <button
+          disabled={pendingFlows.has("form")}
+          onClick={() => runAsyncFlow("form", openForm)}
+        >
+          Form
+        </button>
+        <button
+          disabled={pendingFlows.has("guarded-form")}
+          onClick={() => runAsyncFlow("guarded-form", openGuardedForm)}
+        >
+          Guarded form
+        </button>
         <button onClick={openNested}>Nested</button>
       </span>
       <span className="control-group" aria-label="Stack controls">

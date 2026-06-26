@@ -194,6 +194,10 @@ import 'react-dialog-flow/ui/style.css';
   <Dialog.Description>This cannot be undone.</Dialog.Description>
 </Dialog>
 
+<Dialog shouldClose={(reason) => reason !== 'backdrop' || !formDirty}>
+  ...
+</Dialog>
+
 .danger-dialog {
   --rdf-dialog-panel-background: #111827;
   --rdf-dialog-panel-color: #f9fafb;
@@ -223,6 +227,11 @@ import 'react-dialog-flow/ui/style.css';
               Escape closes dialogs by default. Use{" "}
               <code>closeOnEscape={`{false}`}</code> for flows that require an
               explicit action.
+            </p>
+            <p className="muted">
+              Use <code>shouldClose(reason)</code> for sync or async dismissal
+              guards. Additional requests are ignored while an async guard is
+              pending, and <code>complete(value)</code> bypasses the guard.
             </p>
           </div>
         </div>

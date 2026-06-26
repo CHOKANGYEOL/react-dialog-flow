@@ -14,7 +14,10 @@ import {
   type ElementType,
 } from "react";
 import type { CloseReason, RequestClose } from "../core/types";
-import { useDialogEntryControl } from "../react/DialogEntryControl";
+import {
+  type DialogEntryRequestClose,
+  useDialogEntryControl,
+} from "../react/DialogEntryControl";
 import { injectDialogBaseStyle } from "./baseStyle";
 import { DialogHeader } from "./DialogHeader";
 
@@ -52,11 +55,20 @@ type DialogA11yContextValue = {
 
 const DialogA11yContext = createContext<DialogA11yContextValue | null>(null);
 
+export type DialogShouldClose = (
+  reason: CloseReason,
+) => boolean | Promise<boolean>;
+
 export type DialogProps<C extends ElementType = "div"> = {
   backdrop?: boolean;
   closeOnBackdrop?: boolean;
   /** Close this dialog when Escape is pressed. Defaults to true. */
   closeOnEscape?: boolean;
+  /**
+   * Guard dismissal requests. Return or resolve false to keep the dialog open.
+   * Additional close requests are ignored while an async guard is pending.
+   */
+  shouldClose?: DialogShouldClose;
   backdropClassName?: string;
   backdropProps?: DialogBackdropProps;
   zIndex?: number;
@@ -78,6 +90,7 @@ function DialogRoot<C extends ElementType = "div">({
   backdrop = true,
   closeOnBackdrop = false,
   closeOnEscape = true,
+  shouldClose,
   backdropClassName,
   backdropProps,
   zIndex,
@@ -98,12 +111,17 @@ function DialogRoot<C extends ElementType = "div">({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeFallbackTimerRef = useRef<number | null>(null);
   const enterFrameRef = useRef<number | null>(null);
+  const isMountedRef = useRef(true);
   const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
   const initialFocusRefRef = useRef(initialFocusRef);
   const finalFocusRefRef = useRef(finalFocusRef);
+  const closeOnEscapeRef = useRef(closeOnEscape);
+  const shouldCloseRef = useRef(shouldClose);
   const closeReasonRef = useRef<CloseReason>("programmatic");
   const didFinishCloseRef = useRef(false);
+  const isCheckingShouldCloseRef = useRef(false);
   const [phase, setPhase] = useState<"enter" | "open" | "closing">("enter");
+  const phaseRef = useRef(phase);
   const [titleId, setTitleId] = useState<string>();
   const [descriptionId, setDescriptionId] = useState<string>();
   const { closeEntry, setRequestClose } = useDialogEntryControl();
@@ -117,6 +135,19 @@ function DialogRoot<C extends ElementType = "div">({
 
   initialFocusRefRef.current = initialFocusRef;
   finalFocusRefRef.current = finalFocusRef;
+  closeOnEscapeRef.current = closeOnEscape;
+  shouldCloseRef.current = shouldClose;
+  phaseRef.current = phase;
+
+  useEffect(
+    () => {
+      isMountedRef.current = true;
+      return () => {
+        isMountedRef.current = false;
+      };
+    },
+    [],
+  );
 
   const registerTitle = useCallback((id: string) => {
     setTitleId(id);
@@ -138,17 +169,33 @@ function DialogRoot<C extends ElementType = "div">({
     didFinishCloseRef.current = true;
     closeEntry(closeReasonRef.current);
   }, [closeEntry]);
+  const isClosing = useCallback(() => phaseRef.current === "closing", []);
 
-  const requestClose = useCallback<RequestClose>(
-    (reason: CloseReason = "programmatic") => {
-      if (phase === "closing") return;
-      if (reason === "esc" && !closeOnEscape) return;
+  const requestClose = useCallback<DialogEntryRequestClose>(
+    async (reason: CloseReason = "programmatic", options) => {
+      if (isClosing()) return;
+      if (reason === "esc" && !closeOnEscapeRef.current) return;
+      const shouldCloseGuard = shouldCloseRef.current;
+      if (!options?.skipShouldClose && shouldCloseGuard) {
+        if (isCheckingShouldCloseRef.current) return;
+        isCheckingShouldCloseRef.current = true;
+        let canClose = false;
+        try {
+          canClose = await shouldCloseGuard(reason);
+        } catch {
+          canClose = false;
+        } finally {
+          isCheckingShouldCloseRef.current = false;
+        }
+        if (!canClose) return;
+        if (!isMountedRef.current || isClosing()) return;
+      }
       closeReasonRef.current = reason;
       didFinishCloseRef.current = false;
       setPhase("closing");
       if (motionDuration === 0) finishClose();
     },
-    [closeOnEscape, finishClose, motionDuration, phase],
+    [finishClose, isClosing, motionDuration],
   );
 
   useEffect(() => {
