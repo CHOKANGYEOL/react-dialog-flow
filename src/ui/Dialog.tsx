@@ -142,12 +142,13 @@ function DialogRoot<C extends ElementType = "div">({
   const requestClose = useCallback<RequestClose>(
     (reason: CloseReason = "programmatic") => {
       if (phase === "closing") return;
+      if (reason === "esc" && !closeOnEscape) return;
       closeReasonRef.current = reason;
       didFinishCloseRef.current = false;
       setPhase("closing");
       if (motionDuration === 0) finishClose();
     },
-    [finishClose, motionDuration, phase],
+    [closeOnEscape, finishClose, motionDuration, phase],
   );
 
   useEffect(() => {

@@ -945,6 +945,7 @@ describe("DialogProvider integration", () => {
 
     fireEvent.keyDown(dialog!, { key: "Escape" });
     dialog!.dispatchEvent(new Event("cancel", { bubbles: false }));
+    fireEvent.keyDown(window, { key: "Escape" });
 
     expect(document.querySelector("dialog")?.dataset.state).toBe("open");
   });

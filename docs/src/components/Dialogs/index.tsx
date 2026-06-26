@@ -24,6 +24,7 @@ export function ConfirmDialog({ title, description, onLog }: ConfirmProps) {
     <Dialog
       {...dialogProps}
       closeOnBackdrop
+      closeOnEscape={false}
       overlay={<FlowControls className="dialog-dock" onLog={onLog} />}
     >
       <Dialog.Header className="dialog-header">
@@ -148,11 +149,17 @@ export function FormDialog({ onLog }: FormProps) {
         </Dialog.Description>
         <label className="field">
           <span>Name</span>
-          <input value={name} onChange={(event) => setName(event.target.value)} />
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
         </label>
         <label className="field">
           <span>Role</span>
-          <input value={role} onChange={(event) => setRole(event.target.value)} />
+          <input
+            value={role}
+            onChange={(event) => setRole(event.target.value)}
+          />
         </label>
       </Dialog.Body>
       <Dialog.Footer className="dialog-actions">
