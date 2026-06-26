@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-06-26
 
 - Add `Dialog` `shouldClose(reason)` for synchronous or asynchronous dismissal
   guards.
