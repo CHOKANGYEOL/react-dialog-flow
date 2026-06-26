@@ -135,20 +135,6 @@ if (result.status === 'completed') {
 
 Both APIs resolve after the entry has completed its exit lifecycle.
 
-## Migration notes
-
-There are no application code changes required when upgrading from the beta
-series to `0.1.0`. The stable release keeps the covered behavior aligned with
-the public API:
-
-- `openAsync` and `openAsyncResult` resolve after exit transitions complete.
-- Dismissals report `esc`, `backdrop`, `header`, or `programmatic`.
-- In stacked flows, Escape and backdrop dismissal close the top dialog only.
-
-If a flow needs immediate promise resolution, set `motionDuration={0}` on the
-UI primitive or move immediate side effects into the dialog action handler. Use
-`closeAll()` when one action should dismiss the full stack.
-
 ## Optional UI primitive
 
 The stack is headless. Import the UI primitive for a native modal dialog,
