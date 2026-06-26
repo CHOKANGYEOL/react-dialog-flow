@@ -16,9 +16,19 @@
 </p>
 
 Open dialogs like functions, await typed results, and compose nested modal flows
-without scattered boolean state.
+without scattering boolean state through the page.
 
 Docs and live playground: https://dialog-flow.kangyeol.com
+
+## Positioning
+
+Promise-returning dialog APIs are an established pattern in React libraries such
+as `@ebay/nice-modal-react`, `react-call`, and `react-async-modal`.
+`react-dialog-flow` follows that familiar model, with a small headless stack for
+typed results, dismissal reasons, nested flows, and single-instance entries. Its
+extra piece is an optional native `<dialog>` UI primitive that can handle modal
+behavior, backdrop, scroll lock, focus restoration, and exit-aware transitions
+when you do not want to bring your own dialog component.
 
 ## Install
 
