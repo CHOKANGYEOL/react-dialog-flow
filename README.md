@@ -8,6 +8,13 @@
   Promise-based dialog orchestration for React.
 </p>
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/react-dialog-flow"><img src="https://img.shields.io/npm/v/react-dialog-flow?color=0f172a" alt="npm version" /></a>
+  <a href="https://github.com/CHOKANGYEOL/react-dialog-flow/actions/workflows/ci.yml"><img src="https://github.com/CHOKANGYEOL/react-dialog-flow/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <a href="https://bundlephobia.com/package/react-dialog-flow"><img src="https://img.shields.io/bundlephobia/minzip/react-dialog-flow?label=minzip" alt="Bundle size" /></a>
+  <a href="https://github.com/CHOKANGYEOL/react-dialog-flow/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/react-dialog-flow" alt="License" /></a>
+</p>
+
 Open dialogs like functions, await typed results, and compose nested modal flows
 without scattered boolean state.
 
