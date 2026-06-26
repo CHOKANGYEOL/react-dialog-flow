@@ -7,6 +7,8 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useRef } from "react";
+import type { RefObject } from "react";
 import { DialogProvider, useDialog, useDialogInstance } from "../src";
 import { Dialog } from "../src/ui";
 
@@ -58,6 +60,18 @@ function EscapeDisabledDialog() {
   );
 }
 
+function ImmediateDialog() {
+  const { complete } = useDialogInstance<boolean>();
+  return (
+    <Dialog motionDuration={0}>
+      <Dialog.Header>
+        <Dialog.Title>Immediate dialog</Dialog.Title>
+      </Dialog.Header>
+      <button onClick={() => complete(true)}>Resolve now</button>
+    </Dialog>
+  );
+}
+
 function BackdropDismissDialog() {
   return (
     <Dialog closeOnBackdrop motionDuration={180}>
@@ -65,6 +79,58 @@ function BackdropDismissDialog() {
         <Dialog.Title>Backdrop dismissal</Dialog.Title>
       </Dialog.Header>
       <Dialog.Description>Click outside to dismiss.</Dialog.Description>
+    </Dialog>
+  );
+}
+
+function DefaultBackdropDialog() {
+  return (
+    <Dialog>
+      <Dialog.Header>
+        <Dialog.Title>Default backdrop</Dialog.Title>
+      </Dialog.Header>
+    </Dialog>
+  );
+}
+
+function FallbackMotionDialog() {
+  return (
+    <Dialog closeOnBackdrop motionDuration={1}>
+      <Dialog.Header>
+        <Dialog.Title>Fallback motion</Dialog.Title>
+      </Dialog.Header>
+    </Dialog>
+  );
+}
+
+function FocusDialog({
+  finalFocusRef,
+}: {
+  finalFocusRef?: RefObject<HTMLButtonElement | null>;
+}) {
+  const initialFocusRef = useRef<HTMLButtonElement>(null);
+  const { close } = useDialogInstance();
+  return (
+    <Dialog
+      finalFocusRef={finalFocusRef}
+      initialFocusRef={initialFocusRef}
+      motionDuration={0}
+    >
+      <Dialog.Header>
+        <Dialog.Title>Focus dialog</Dialog.Title>
+      </Dialog.Header>
+      <button ref={initialFocusRef}>Initial target</button>
+      <button onClick={() => close()}>Finish focus dialog</button>
+    </Dialog>
+  );
+}
+
+function NoScrollLockDialog() {
+  return (
+    <Dialog lockScroll={false}>
+      <Dialog.Header>
+        <Dialog.Title>No scroll lock</Dialog.Title>
+      </Dialog.Header>
     </Dialog>
   );
 }
@@ -87,6 +153,27 @@ function StackDialog({
   );
 }
 
+function OpenImmediateFlow({
+  onResult,
+}: {
+  onResult: (value: boolean) => void;
+}) {
+  const { openAsync } = useDialog();
+  return (
+    <button
+      onClick={async () =>
+        onResult(
+          await openAsync<boolean>(ImmediateDialog, {
+            onDismiss: () => false,
+          }),
+        )
+      }
+    >
+      Open immediate
+    </button>
+  );
+}
+
 function OpenAsyncFlow({ onResult }: { onResult: (value: boolean) => void }) {
   const { openAsync } = useDialog();
   return (
@@ -98,6 +185,23 @@ function OpenAsyncFlow({ onResult }: { onResult: (value: boolean) => void }) {
       }
     >
       Open async
+    </button>
+  );
+}
+
+function OpenDefaultBackdropFlow({
+  onResult,
+}: {
+  onResult: (value: unknown) => void;
+}) {
+  const { openAsyncResult } = useDialog();
+  return (
+    <button
+      onClick={async () =>
+        onResult(await openAsyncResult<boolean>(DefaultBackdropDialog))
+      }
+    >
+      Open default backdrop
     </button>
   );
 }
@@ -119,6 +223,23 @@ function OpenBackdropDismissFlow({
       }
     >
       Open backdrop async
+    </button>
+  );
+}
+
+function OpenFallbackMotionFlow({
+  onResult,
+}: {
+  onResult: (value: unknown) => void;
+}) {
+  const { openAsyncResult } = useDialog();
+  return (
+    <button
+      onClick={async () =>
+        onResult(await openAsyncResult<boolean>(FallbackMotionDialog))
+      }
+    >
+      Open fallback motion
     </button>
   );
 }
@@ -181,6 +302,35 @@ function OpenStackedAsyncFlow({
   );
 }
 
+function OpenFocusFlow({
+  onFallbackReady,
+}: {
+  onFallbackReady?: (element: HTMLButtonElement) => void;
+}) {
+  const { open } = useDialog();
+  const finalFocusRef = useRef<HTMLButtonElement>(null);
+  return (
+    <>
+      <button>Previous focus</button>
+      <button
+        onClick={() => open(FocusDialog, { finalFocusRef })}
+        type="button"
+      >
+        Open focus dialog
+      </button>
+      <button
+        ref={(element) => {
+          finalFocusRef.current = element;
+          if (element) onFallbackReady?.(element);
+        }}
+        type="button"
+      >
+        Focus fallback
+      </button>
+    </>
+  );
+}
+
 function OpenHeaderOnlyFlow() {
   const { open } = useDialog();
   return (
@@ -188,11 +338,33 @@ function OpenHeaderOnlyFlow() {
   );
 }
 
+function OpenNoScrollLockFlow() {
+  const { open } = useDialog();
+  return <button onClick={() => open(NoScrollLockDialog)}>Open no lock</button>;
+}
+
 function OpenEscapeDisabledFlow() {
   const { open } = useDialog();
   return (
     <button onClick={() => open(EscapeDisabledDialog)}>
       Open escape disabled
+    </button>
+  );
+}
+
+function PendingAsyncFlow({
+  onResult,
+}: {
+  onResult: (value: unknown) => void;
+}) {
+  const { openAsyncResult } = useDialog();
+  return (
+    <button
+      onClick={async () =>
+        onResult(await openAsyncResult<boolean>(ResultDialog))
+      }
+    >
+      Open pending async
     </button>
   );
 }
@@ -264,7 +436,33 @@ function clickTopBackdrop() {
   fireEvent.click(backdrop);
 }
 
+function clickHeaderClose() {
+  const closeButton = document.querySelector<HTMLButtonElement>(
+    ".rdf-dialog__close-button",
+  );
+  if (!closeButton) throw new Error("Header close button was not rendered.");
+  fireEvent.click(closeButton);
+}
+
 describe("DialogProvider integration", () => {
+  it("resolves motionDuration=0 dialogs immediately without waiting for motion events", async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
+    render(
+      <DialogProvider>
+        <OpenImmediateFlow onResult={onResult} />
+      </DialogProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open immediate" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Resolve now" }),
+    );
+
+    await waitFor(() => expect(onResult).toHaveBeenCalledWith(true));
+    await waitFor(() => expect(document.querySelector("dialog")).toBeNull());
+  });
+
   it("resolves openAsync with a completed value after the exit transition", async () => {
     const user = userEvent.setup();
     const onResult = vi.fn();
@@ -307,6 +505,63 @@ describe("DialogProvider integration", () => {
     await waitFor(() => expect(onResult).toHaveBeenCalledWith("backdrop"));
   });
 
+  it("uses the motion fallback timer when no transition or animation event fires", async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
+    render(
+      <DialogProvider>
+        <OpenFallbackMotionFlow onResult={onResult} />
+      </DialogProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Open fallback motion" }),
+    );
+    await screen.findByRole("heading", { name: "Fallback motion" });
+    clickTopBackdrop();
+
+    await waitFor(() =>
+      expect(document.querySelector("dialog")?.dataset.state).toBe("closing"),
+    );
+    await waitFor(() =>
+      expect(onResult).toHaveBeenCalledWith({
+        status: "dismissed",
+        reason: "backdrop",
+      }),
+    );
+    expect(document.querySelector("dialog")).toBeNull();
+  });
+
+  it("finishes closing on animationend as well as transitionend", async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
+    render(
+      <DialogProvider>
+        <OpenBackdropResultFlow onResult={onResult} />
+      </DialogProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Open backdrop result" }),
+    );
+    await screen.findByRole("heading", { name: "Backdrop dismissal" });
+    clickTopBackdrop();
+    await waitFor(() =>
+      expect(document.querySelector("dialog")?.dataset.state).toBe("closing"),
+    );
+
+    const panel = document.querySelector(".rdf-dialog__panel");
+    if (!panel) throw new Error("Dialog panel was not rendered.");
+    fireEvent.animationEnd(panel);
+
+    await waitFor(() =>
+      expect(onResult).toHaveBeenCalledWith({
+        status: "dismissed",
+        reason: "backdrop",
+      }),
+    );
+  });
+
   it("returns a dismiss reason for Escape through openAsyncResult", async () => {
     const user = userEvent.setup();
     const onResult = vi.fn();
@@ -327,6 +582,42 @@ describe("DialogProvider integration", () => {
       expect(onResult).toHaveBeenCalledWith({
         status: "dismissed",
         reason: "esc",
+      }),
+    );
+  });
+
+  it("keeps the dialog open when the default backdrop is clicked", async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
+    render(
+      <DialogProvider>
+        <OpenDefaultBackdropFlow onResult={onResult} />
+      </DialogProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Open default backdrop" }),
+    );
+    await screen.findByRole("heading", { name: "Default backdrop" });
+
+    const backdrop = document.querySelector<HTMLButtonElement>(
+      ".rdf-dialog__backdrop",
+    );
+    expect(backdrop?.disabled).toBe(true);
+    await waitFor(() =>
+      expect(document.querySelector("dialog")?.dataset.state).toBe("open"),
+    );
+    await user.click(backdrop!);
+
+    expect(document.querySelector("dialog")?.dataset.state).toBe("open");
+    expect(onResult).not.toHaveBeenCalled();
+
+    clickHeaderClose();
+    finishDialogExit();
+    await waitFor(() =>
+      expect(onResult).toHaveBeenCalledWith({
+        status: "dismissed",
+        reason: "header",
       }),
     );
   });
@@ -421,6 +712,83 @@ describe("DialogProvider integration", () => {
     expect(screen.getByRole("heading", { name: "First dialog" })).toBeTruthy();
   });
 
+  it("keeps scroll locked until the last stacked dialog closes", async () => {
+    const user = userEvent.setup();
+    const originalOverflow = "auto";
+    document.documentElement.style.overflow = originalOverflow;
+    render(
+      <DialogProvider>
+        <OpenStackedAsyncFlow
+          onFirst={() => undefined}
+          onSecond={() => undefined}
+        />
+      </DialogProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Open stacked async" }),
+    );
+    await screen.findByRole("heading", { name: "First dialog" });
+    await screen.findByRole("heading", { name: "Second dialog" });
+    expect(document.documentElement.style.overflow).toBe("hidden");
+
+    clickTopBackdrop();
+    await waitFor(() =>
+      expect(document.querySelectorAll("dialog")[1]?.dataset.state).toBe(
+        "closing",
+      ),
+    );
+    finishDialogExit();
+    await waitFor(() =>
+      expect(document.querySelectorAll("dialog")).toHaveLength(1),
+    );
+    expect(document.documentElement.style.overflow).toBe("hidden");
+
+    clickTopBackdrop();
+    finishDialogExit();
+    await waitFor(() => expect(document.querySelector("dialog")).toBeNull());
+    expect(document.documentElement.style.overflow).toBe(originalOverflow);
+  });
+
+  it("does not lock document scroll when lockScroll is false", async () => {
+    const user = userEvent.setup();
+    document.documentElement.style.overflow = "visible";
+    render(
+      <DialogProvider>
+        <OpenNoScrollLockFlow />
+      </DialogProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open no lock" }));
+    await screen.findByRole("heading", { name: "No scroll lock" });
+
+    expect(document.documentElement.style.overflow).toBe("visible");
+  });
+
+  it("moves focus to the initial target and restores the explicit final target", async () => {
+    const user = userEvent.setup();
+    const onFallbackReady = vi.fn();
+    render(
+      <DialogProvider>
+        <OpenFocusFlow onFallbackReady={onFallbackReady} />
+      </DialogProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open focus dialog" }));
+    const initialTarget = await screen.findByRole("button", {
+      name: "Initial target",
+    });
+    await waitFor(() => expect(document.activeElement).toBe(initialTarget));
+
+    await user.click(
+      screen.getByRole("button", { name: "Finish focus dialog" }),
+    );
+    await waitFor(() => expect(document.querySelector("dialog")).toBeNull());
+    const lastCall =
+      onFallbackReady.mock.calls[onFallbackReady.mock.calls.length - 1];
+    expect(document.activeElement).toBe(lastCall?.[0]);
+  });
+
   it("uses the supplied dismiss fallback when closeTop closes an async entry", async () => {
     const user = userEvent.setup();
     const onDismiss = vi.fn(() => false);
@@ -457,6 +825,29 @@ describe("DialogProvider integration", () => {
     );
     finishDialogExit();
     await waitFor(() => expect(onDismiss).toHaveBeenCalledWith("programmatic"));
+  });
+
+  it("resolves pending async dialogs as programmatic when the provider unmounts", async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
+    const { unmount } = render(
+      <DialogProvider>
+        <PendingAsyncFlow onResult={onResult} />
+      </DialogProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Open pending async" }),
+    );
+    await screen.findByRole("heading", { name: "Confirm action" });
+    unmount();
+
+    await waitFor(() =>
+      expect(onResult).toHaveBeenCalledWith({
+        status: "dismissed",
+        reason: "programmatic",
+      }),
+    );
   });
 
   it("connects Dialog.Title and Dialog.Description to the native dialog", async () => {
@@ -554,6 +945,24 @@ describe("DialogProvider integration", () => {
 
     fireEvent.keyDown(dialog!, { key: "Escape" });
     dialog!.dispatchEvent(new Event("cancel", { bubbles: false }));
+
+    expect(document.querySelector("dialog")?.dataset.state).toBe("open");
+  });
+
+  it("keeps a dialog open when provider closeOnEscape is false", async () => {
+    const user = userEvent.setup();
+    render(
+      <DialogProvider closeOnEscape={false}>
+        <OpenResultFlow onResult={() => undefined} />
+      </DialogProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open result" }));
+    const dialog = document.querySelector("dialog");
+    expect(dialog).not.toBeNull();
+    await waitFor(() => expect(dialog?.dataset.state).toBe("open"));
+
+    fireEvent.keyDown(window, { key: "Escape" });
 
     expect(document.querySelector("dialog")?.dataset.state).toBe("open");
   });
