@@ -22,7 +22,7 @@ export function Playground() {
   return (
     <section className="playground docs-section" id="playground">
       <div className="section-heading">
-        <p className="section-kicker">07 / Live playground</p>
+        <p className="section-kicker">08 / Live playground</p>
         <h2>Try confirm, select, form, and nested dialog flows.</h2>
         <p className="muted">
           Once a native modal opens, the page behind it becomes inert. The same

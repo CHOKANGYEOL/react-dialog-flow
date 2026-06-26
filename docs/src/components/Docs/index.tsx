@@ -236,9 +236,84 @@ import 'react-dialog-flow/ui/style.css';
           </div>
         </div>
       </section>
+      <section className="docs-section" id="integrations">
+        <div className="section-heading">
+          <p className="section-kicker">06 / UI integrations</p>
+          <h2>Keep your design system, add dialog orchestration.</h2>
+        </div>
+        <div className="docs-grid">
+          <div>
+            <p>
+              <code>react-dialog-flow</code> is an orchestration layer. It does
+              not need to replace Radix, shadcn/ui, or an internal dialog
+              component. Render your existing dialog inside a stack entry and
+              call <code>complete(value)</code> when it returns a result.
+            </p>
+            <p className="muted">
+              The only requirement is that the dialog component is controlled
+              by the entry lifecycle and calls <code>close(reason)</code> when
+              it is dismissed.
+            </p>
+          </div>
+          <CodeExample>{`import * as RadixDialog from '@radix-ui/react-dialog';
+import { useDialogInstance } from 'react-dialog-flow';
+
+function DeleteProjectDialog({ projectName }: { projectName: string }) {
+  const { close, complete } = useDialogInstance<boolean>();
+
+  return (
+    <RadixDialog.Root
+      open
+      onOpenChange={(open) => !open && close('programmatic')}
+    >
+      <RadixDialog.Portal>
+        <RadixDialog.Overlay />
+        <RadixDialog.Content>
+          <RadixDialog.Title>Delete {projectName}?</RadixDialog.Title>
+          <RadixDialog.Description>This cannot be undone.</RadixDialog.Description>
+          <button onClick={() => close('programmatic')}>Cancel</button>
+          <button onClick={() => complete(true)}>Delete</button>
+        </RadixDialog.Content>
+      </RadixDialog.Portal>
+    </RadixDialog.Root>
+  );
+}`}</CodeExample>
+        </div>
+        <div className="docs-grid">
+          <CodeExample>{`import { useDialogInstance } from 'react-dialog-flow';
+
+function ConfirmDialog({ title }: { title: string }) {
+  const { close, complete } = useDialogInstance<boolean>();
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && close('programmatic')}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => close('programmatic')}>
+            Cancel
+          </Button>
+          <Button onClick={() => complete(true)}>Confirm</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}`}</CodeExample>
+          <div>
+            <p>
+              shadcn/ui follows the same pattern because its dialog components
+              are controlled. Keep the visual system and let{" "}
+              <code>react-dialog-flow</code> coordinate stack order, async
+              results, dismissal reasons, and multi-step flows.
+            </p>
+          </div>
+        </div>
+      </section>
       <section className="docs-section" id="examples">
         <div className="section-heading">
-          <p className="section-kicker">06 / Practical flows</p>
+          <p className="section-kicker">07 / Practical flows</p>
           <h2>Compose production dialog paths as ordinary async code.</h2>
         </div>
         <div className="docs-grid">

@@ -48,6 +48,7 @@ if (confirmed) await addUser(user.id);`}</code>
           <a href="#stack">Stack</a>
           <a href="#async">Async results</a>
           <a href="#ui">UI &amp; a11y</a>
+          <a href="#integrations">Integrations</a>
           <a href="#examples">Examples</a>
           <a href="#playground">Playground</a>
         </nav>

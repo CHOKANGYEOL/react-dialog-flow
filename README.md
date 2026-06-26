@@ -275,6 +275,69 @@ same dialog are ignored. `complete(value)` does not run `shouldClose`.
 </Dialog>
 ```
 
+## Bring your own dialog UI
+
+`react-dialog-flow` is an orchestration layer, not a replacement for your UI
+system. Use the optional `Dialog` primitive when you want it, or render Radix,
+shadcn/ui, or an internal design-system dialog inside the stack entry.
+
+Radix Dialog:
+
+```tsx
+import * as RadixDialog from '@radix-ui/react-dialog';
+import { useDialogInstance } from 'react-dialog-flow';
+
+function DeleteProjectDialog({ projectName }: { projectName: string }) {
+  const { close, complete } = useDialogInstance<boolean>();
+
+  return (
+    <RadixDialog.Root
+      open
+      onOpenChange={(open) => !open && close('programmatic')}
+    >
+      <RadixDialog.Portal>
+        <RadixDialog.Overlay />
+        <RadixDialog.Content>
+          <RadixDialog.Title>Delete {projectName}?</RadixDialog.Title>
+          <RadixDialog.Description>This cannot be undone.</RadixDialog.Description>
+          <button onClick={() => close('programmatic')}>Cancel</button>
+          <button onClick={() => complete(true)}>Delete</button>
+        </RadixDialog.Content>
+      </RadixDialog.Portal>
+    </RadixDialog.Root>
+  );
+}
+```
+
+shadcn/ui style:
+
+```tsx
+import { useDialogInstance } from 'react-dialog-flow';
+
+function ConfirmDialog({ title }: { title: string }) {
+  const { close, complete } = useDialogInstance<boolean>();
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && close('programmatic')}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => close('programmatic')}>
+            Cancel
+          </Button>
+          <Button onClick={() => complete(true)}>Confirm</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+When you use the bundled UI primitive, customize it through classes and CSS
+custom properties:
+
 ```css
 .danger-dialog {
   --rdf-dialog-panel-background: #111827;
