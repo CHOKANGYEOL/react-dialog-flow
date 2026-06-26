@@ -261,9 +261,15 @@ function ConfirmDialog() {
 
 `Dialog.Title` supplies the accessible name and `Dialog.Description` is
 optional supporting text. Use `initialFocusRef` and `finalFocusRef` when the
-default focus placement or restoration is not appropriate. Customize the
-optional theme through classes, `backdropProps`, `panel`, `overlay`, and CSS
-custom properties.
+default focus placement or restoration is not appropriate.
+
+When `closeOnBackdrop` is enabled, the backdrop is rendered as a full-viewport
+button so pointer and keyboard dismissal share the same path. Its accessible
+label defaults to `Close dialog`; set `backdropCloseLabel` for app-specific
+wording, or use `backdropProps` when you need lower-level button attributes.
+
+Customize the optional theme through classes, `backdropProps`, `panel`,
+`overlay`, and CSS custom properties.
 
 Escape closes dialogs by default. Set `closeOnEscape={false}` when a flow must
 be completed or dismissed explicitly.

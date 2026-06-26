@@ -91,6 +91,30 @@ function BackdropDismissDialog() {
   );
 }
 
+function CustomBackdropLabelDialog() {
+  return (
+    <Dialog closeOnBackdrop backdropCloseLabel="Dismiss overlay">
+      <Dialog.Header>
+        <Dialog.Title>Custom backdrop label</Dialog.Title>
+      </Dialog.Header>
+    </Dialog>
+  );
+}
+
+function BackdropPropsLabelDialog() {
+  return (
+    <Dialog
+      closeOnBackdrop
+      backdropCloseLabel="Dismiss overlay"
+      backdropProps={{ "aria-label": "Close from backdrop" }}
+    >
+      <Dialog.Header>
+        <Dialog.Title>Backdrop props label</Dialog.Title>
+      </Dialog.Header>
+    </Dialog>
+  );
+}
+
 function DefaultBackdropDialog() {
   return (
     <Dialog>
@@ -291,6 +315,24 @@ function OpenBackdropResultFlow({
       }
     >
       Open backdrop result
+    </button>
+  );
+}
+
+function OpenCustomBackdropLabelFlow() {
+  const { open } = useDialog();
+  return (
+    <button onClick={() => open(CustomBackdropLabelDialog)}>
+      Open custom backdrop label
+    </button>
+  );
+}
+
+function OpenBackdropPropsLabelFlow() {
+  const { open } = useDialog();
+  return (
+    <button onClick={() => open(BackdropPropsLabelDialog)}>
+      Open backdrop props label
     </button>
   );
 }
@@ -928,6 +970,49 @@ describe("DialogProvider integration", () => {
         reason: "header",
       }),
     );
+  });
+
+  it("uses the custom backdrop close label for the backdrop button", async () => {
+    const user = userEvent.setup();
+    render(
+      <DialogProvider>
+        <OpenCustomBackdropLabelFlow />
+      </DialogProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Open custom backdrop label" }),
+    );
+    await screen.findByRole("heading", { name: "Custom backdrop label" });
+
+    expect(
+      screen
+        .getByRole("button", { name: "Dismiss overlay" })
+        .classList.contains("rdf-dialog__backdrop"),
+    ).toBe(true);
+  });
+
+  it("lets backdropProps override the backdrop close label", async () => {
+    const user = userEvent.setup();
+    render(
+      <DialogProvider>
+        <OpenBackdropPropsLabelFlow />
+      </DialogProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Open backdrop props label" }),
+    );
+    await screen.findByRole("heading", { name: "Backdrop props label" });
+
+    expect(
+      screen
+        .getByRole("button", { name: "Close from backdrop" })
+        .classList.contains("rdf-dialog__backdrop"),
+    ).toBe(true);
+    expect(
+      screen.queryByRole("button", { name: "Dismiss overlay" }),
+    ).toBeNull();
   });
 
   it("returns a dismiss reason for backdrop through openAsyncResult", async () => {

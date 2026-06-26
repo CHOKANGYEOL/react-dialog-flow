@@ -194,6 +194,10 @@ import 'react-dialog-flow/ui/style.css';
   <Dialog.Description>This cannot be undone.</Dialog.Description>
 </Dialog>
 
+<Dialog closeOnBackdrop backdropCloseLabel="Dismiss overlay">
+  ...
+</Dialog>
+
 <Dialog shouldClose={(reason) => reason !== 'backdrop' || !formDirty}>
   ...
 </Dialog>
@@ -229,6 +233,13 @@ import 'react-dialog-flow/ui/style.css';
               Prefer CSS custom properties for common visual changes. Slot
               classes such as <code>.rdf-dialog__close-icon</code> remain
               available when you need selector-level overrides.
+            </p>
+            <p className="muted">
+              When <code>closeOnBackdrop</code> is enabled, the backdrop is a
+              full-viewport button. Its accessible label defaults to{" "}
+              <code>Close dialog</code>; set <code>backdropCloseLabel</code> for
+              app-specific wording, or use <code>backdropProps</code> for
+              lower-level button attributes.
             </p>
             <p className="muted">
               Escape closes dialogs by default. Use{" "}

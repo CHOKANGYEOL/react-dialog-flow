@@ -184,6 +184,8 @@ export type DialogProps<C extends ElementType = "div"> = {
    * Additional close requests are ignored while an async guard is pending.
    */
   shouldClose?: DialogShouldClose;
+  /** Accessible label for the backdrop close button. Defaults to "Close dialog". */
+  backdropCloseLabel?: string;
   backdropClassName?: string;
   backdropProps?: DialogBackdropProps;
   zIndex?: number;
@@ -206,6 +208,7 @@ function DialogRoot<C extends ElementType = "div">({
   closeOnBackdrop = false,
   closeOnEscape = true,
   shouldClose,
+  backdropCloseLabel = "Close dialog",
   backdropClassName,
   backdropProps,
   zIndex,
@@ -429,7 +432,7 @@ function DialogRoot<C extends ElementType = "div">({
         {backdrop && (
           <button
             {...backdropProps}
-            aria-label={backdropProps?.["aria-label"] ?? "Close dialog"}
+            aria-label={backdropProps?.["aria-label"] ?? backdropCloseLabel}
             className={[
               "rdf-dialog__backdrop",
               backdropClassName,
