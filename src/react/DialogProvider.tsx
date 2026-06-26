@@ -65,8 +65,8 @@ export function DialogProvider({
         resolve({ status: "dismissed", reason });
       }
       resultResolversRef.current.delete(id);
-      resultValuesRef.current.delete(id);
     }
+    resultValuesRef.current.delete(id);
     dispatch(
       closeDialog({ reason, matcher: (candidate) => candidate.id === id }),
     );

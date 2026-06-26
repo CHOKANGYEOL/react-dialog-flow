@@ -32,7 +32,10 @@ beforeAll(() => {
   });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 function ResultDialog() {
   const { complete } = useDialogInstance<boolean>();
@@ -302,6 +305,26 @@ function OpenResultFlow({ onResult }: { onResult: (value: unknown) => void }) {
     >
       Open result
     </button>
+  );
+}
+
+function OpenPlainAndAsyncResultFlow({
+  onResult,
+}: {
+  onResult: (value: unknown) => void;
+}) {
+  const { open, openAsyncResult } = useDialog();
+  return (
+    <>
+      <button onClick={() => open(ResultDialog)}>Open plain result</button>
+      <button
+        onClick={async () =>
+          onResult(await openAsyncResult<boolean>(DefaultBackdropDialog))
+        }
+      >
+        Open async after plain
+      </button>
+    </>
   );
 }
 
@@ -825,6 +848,48 @@ describe("DialogProvider integration", () => {
       expect(onResult).toHaveBeenCalledWith({
         status: "dismissed",
         reason: "esc",
+      }),
+    );
+  });
+
+  it("clears completed values from dialogs opened without a result promise", async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
+    const randomUUID = vi.spyOn(crypto, "randomUUID");
+    randomUUID.mockImplementation(
+      () => "00000000-0000-4000-8000-000000000000",
+    );
+
+    render(
+      <DialogProvider>
+        <OpenPlainAndAsyncResultFlow onResult={onResult} />
+      </DialogProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Open plain result" }),
+    );
+    await user.click(await screen.findByRole("button", { name: "Accept" }));
+    await waitFor(() =>
+      expect(document.querySelector("dialog")?.dataset.state).toBe("closing"),
+    );
+    finishDialogExit();
+    await waitFor(() => expect(document.querySelector("dialog")).toBeNull());
+
+    await user.click(
+      screen.getByRole("button", { name: "Open async after plain" }),
+    );
+    await screen.findByRole("heading", { name: "Default backdrop" });
+    clickHeaderClose();
+    await waitFor(() =>
+      expect(document.querySelector("dialog")?.dataset.state).toBe("closing"),
+    );
+    finishDialogExit();
+
+    await waitFor(() =>
+      expect(onResult).toHaveBeenCalledWith({
+        status: "dismissed",
+        reason: "header",
       }),
     );
   });
